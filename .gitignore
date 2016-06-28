@@ -1,3 +1,6 @@
+# Doxygen docs
+/doc/
+
 # Compiled Object files
 *.slo
 *.lo
