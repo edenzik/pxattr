@@ -1,0 +1,94 @@
+Pxattr provide a Linux/FreeBSD/Mac OS X cross-platform uniform interface to 
+user file extended attributes, with an attributes backup/restore tool.
+
+Full documentation: http://www.lesbonscomptes.com/pxattr/ 
+or doc/html/index.html inside the source tree.
+- Sur linux, il faut explicitement enabler les xattr:
+mount -o remount,user_xattr /home
+ou
+/dev/sda7       /home   reiserfs        acl,user_xattr 1 2
+
+
+FreeBSD
+--------------------------
+ #include <sys/types.h>
+ #include <sys/extattr.h>
+ #include <sys/uio.h>
+
+ ssize_t extattr_get_fd(int fd, int attrnamespace, const char *attrname,
+                        void *data, size_t nbytes);
+ int extattr_set_fd(int fd, int attrnamespace, const char *attrname,
+                    const void *data, size_t nbytes);
+ int extattr_delete_fd(int fd, int attrnamespace, const char *attrname);
+ ssize_t extattr_list_fd(int fd, int attrnamespace, void *data, size_t nbytes);
+
+ ssize_t extattr_get_file(const char *path, int attrnamespace,
+                          const char *attrname, void *data, size_t nbytes);
+ etc.
+ ssize_t extattr_get_link(const char *path, int attrnamespace,
+                          const char *attrname, void *data, size_t nbytes);
+ etc.
+- Namespaces are separate, not part of the name. 2 defined by default:
+  EXTATTR_NAMESPACE_USER, EXTATTR_NAMESPACE_SYSTEM
+- _get_() can get size by passing null buffer. Can also apparently read in
+  multiple chunks ?? to be checked.
+
+Linux
+--------------------------------
+  #include <sys/types.h>
+  #include <attr/xattr.h>
+
+ ssize_t fgetxattr(int fd, const char *name, void *value, size_t size);
+ ssize_t flistxattr(int fd, char *list, size_t size);
+ int fsetxattr(int fd, const char *name, const void *value, size_t size, 
+               int flags);
+ int fremovexattr(int fd, const char *name);
+
+ ssize_t getxattr(const char *path, const char *name, void *value, size_t size);
+etc.
+ int lsetxattr(const char *path, const char *name, const void *value, 
+   size_t size, int flags);
+etc.
+
+- The namespace is part of the name "user.xxx.yy". Four predefined spaces:
+  security, system, trusted, user. So permissions depend on the name prefix.
+  The system namespace is used for implementing acls
+
+- get() can get size by passing buffer of size 0
+
+- The flags to "set" are XATTR_CREATE or XATTR_REPLACE. Default 0 means
+  create or replace as appropriate.
+
+
+MacOSX
+-----------------------------
+ #include <sys/xattr.h>
+
+ ssize_t fgetxattr(int fd, const char *name, void *value, size_t size,
+                   u_int32_t position, int options);
+ int fsetxattr(int fd, const char *name, void *value, size_t size,
+               u_int32_t position, int options);
+ int fremovexattr(int fd, const char *name, int options);
+ ssize_t flistxattr(int fd, char *namebuf, size_t size, int options);
+
+ ssize_t getxattr(const char *path, const char *name, void *value, size_t size,
+                  u_int32_t position, int options);
+etc.
+
+ - position is only used with the resource fork, else set to 0
+ - names are UTF-8. Max size 
+ - get with size 0 returns actual size.
+ - options: XATTR_NOFOLLOW (all), XATTR_CREATE/XATTR_REPLACE (setxattr()
+   not set->either)
+
+http://arstechnica.com/reviews/os/macosx-10-4.ars/7:
+    Apple recommends the use of a reverse-DNS naming scheme (e.g.,
+    com.apple.itunes.artist), but with the dots replaced with underscores
+    in order to avoid conflicting with the namespace convention used by
+    Cocoa's key/value coding system.  
+    - Max name size 128 ?
+
+There are apparently no predefined namespaces and no restrictions on names
+
+Solaris
+---------
