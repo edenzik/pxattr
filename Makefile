@@ -1,5 +1,8 @@
 all: pxattr 
 
+doxygen:
+	doxygen
+
 PXATTROBJS = trpxattr.o pxattr.o 
 pxattr:  $(PXATTROBJS)
 	$(CXX) -o pxattr $(PXATTROBJS) -lstdc++
