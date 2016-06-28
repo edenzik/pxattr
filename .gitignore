@@ -1,6 +1,9 @@
 # Doxygen docs
 /doc/
 
+# Main binary
+/pxattr
+
 # Compiled Object files
 *.slo
 *.lo
